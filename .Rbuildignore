@@ -1,4 +1,10 @@
-^\\.git$
-^\\.github$
-^README\\.Rmd$
-^MRMU\\.Rproj$
+^\.git$
+^\.github$
+^README\.Rmd$
+^MRMU\.Rproj$
+^\.Rlib$
+^tools$
+^results$
+^MRMU\.Rcheck$
+^\.\.Rcheck$
+^MRMU_.*[.]tar[.]gz$

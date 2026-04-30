@@ -43,7 +43,7 @@
 #' #'                outcome = "T2D",
 #' #'                C = C,
 #' #'                Omega =  Omega ,
-#' #'                Cor.SelectionBias = T)
+#' #'                Cor.SelectionBias = TRUE)
 #' #' MRplot(MRres, exposure = "BMI", outcome = "T2D")
 #' #' @export
 #' #' 
@@ -58,10 +58,10 @@ MRMU <- function(MRdat = NULL,
                  tau.sq = NULL,
                  C = NULL,
                  Omega = NULL,
-                 Cor.SelectionBias = T,
+                 Cor.SelectionBias = TRUE,
                  tol = 1e-8,
                  a =1, b=1,
-                 cut.confounders=T){
+                 cut.confounders = TRUE){
   
   if(is.null(MRdat)){
     cat("No MRdat for MR testing")
@@ -156,7 +156,7 @@ MRMU <- function(MRdat = NULL,
                                 outcome=outcome,
                                 Omega = Omega,
                                 C=C,
-                                Cor.SelectionBias = T)
+                                Cor.SelectionBias = TRUE)
     
     
     

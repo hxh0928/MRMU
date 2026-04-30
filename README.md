@@ -7,7 +7,7 @@ exposures/confounders using GWAS summary statistics.
 
 ```r
 # install.packages("remotes")
-remotes::install_github("YOUR_GITHUB_USERNAME/MRMU")
+remotes::install_github("hxh0928/MRMU")
 ```
 
 The package depends on `MRAPSS`, `Matrix`, `expm`, and `data.table`.
@@ -44,6 +44,23 @@ fit <- MRMU(
 
 If PLINK-based clumping is needed, pass `bfile` and `plink_bin` to
 `MRMU_Input()`, `SVMR_Input()`, or `MVMR_IV()`.
+
+## Tutorial and example reports
+
+The urate-CAD tutorial with SBP and DBP as confounders is available in:
+
+- `docs/MRMU-Rpackage-Tutorial.md`
+- `tutorials/MRMU_Rpackage_Tutorial.md`
+- `tutorials/MRMU_Rpackage_Tutorial.pdf`
+
+The comparison between MRMU and MRAPSS without confounders is available in:
+
+- `docs/MRMU-vs-MRAPSS-Comparison.md`
+- `reports/urate_cad_mrmu_vs_mrapss_comparison.md`
+- `reports/urate_cad_mrmu_vs_mrapss_comparison.pdf`
+
+Example data are not stored in this repository. The tutorial includes a
+placeholder table for shared download links.
 
 ## Input summary-statistic format
 

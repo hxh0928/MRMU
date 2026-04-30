@@ -3,7 +3,9 @@ Title: Mendelian Randomization With Multiple Unmeasured Confounders
 Version: 0.0.1
 Authors@R: 
     person(given = "Xianghong", family = "Hu", role = c("aut", "cre"),
-           email = "xianghong.hu@example.com")
+           email = "maxhu@ust.hk")
+Author: Xianghong Hu
+Maintainer: Xianghong Hu <maxhu@ust.hk>
 Description: Implements MR-MU methods for Mendelian randomization analyses with
     multiple exposures/confounders using GWAS summary statistics. The package
     includes tools for harmonising summary data, constructing MR-MU inputs,
