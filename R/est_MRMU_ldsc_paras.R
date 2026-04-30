@@ -1,7 +1,35 @@
+#' Estimate MR-MU LDSC background parameters
+#'
+#' Estimates pairwise LDSC-based nuisance parameters for all traits listed in
+#' `data.files`. The resulting `Omega` and `C` matrices can be passed directly
+#' to [MRMU()] after harmonising and clumping instruments.
+#'
+#' @param data.files A data frame with columns `trait.name` and `file.dir`.
+#'   `trait.name` gives the trait label and `file.dir` points to a GWAS
+#'   summary-statistic file with `SNP`, `A1`, `A2`, `Z`, `N`, and `P` columns.
+#' @param ldscore.files Directory containing LD score reference files in the
+#'   format expected by `MRAPSS::est_paras()`.
+#'
+#' @return A list with four elements:
+#' \describe{
+#'   \item{`LDSC.res`}{Pairwise LDSC summary table.}
+#'   \item{`gc`}{Matrix of pairwise genetic correlations.}
+#'   \item{`Omega`}{Matrix of polygenic-effect covariance parameters.}
+#'   \item{`C`}{Matrix of sample-structure parameters.}
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' paras <- est_MRMU_ldsc_paras(data.files, "path/to/eur_w_ld_chr")
+#' paras$Omega
+#' paras$C
+#' }
+#' @export
 est_MRMU_ldsc_paras <- function(data.files, ldscore.files="/import/home/share/xhu/database/1KG/eur_w_ld_chr"){
   
   traits = data.files$trait.name
   
+  # Allocate square matrices using the trait order supplied by data.files.
   Omega = matrix(0,length(traits), length(traits))
   C = matrix(0,length(traits), length(traits))
   gc =  matrix(0,length(traits), length(traits))
@@ -14,7 +42,7 @@ est_MRMU_ldsc_paras <- function(data.files, ldscore.files="/import/home/share/xh
       trait1 = data.table::fread(data.files[i, "file.dir"])
       trait2 = data.table::fread(data.files[j, "file.dir"])
       
-      # estimate parameters using LDSC
+      # Estimate pairwise LDSC parameters for traits i and j.
       paras = MRAPSS::est_paras(dat1 = trait1,
                                 dat2 = trait2,
                                 trait1.name = traits[i],
@@ -42,4 +70,3 @@ est_MRMU_ldsc_paras <- function(data.files, ldscore.files="/import/home/share/xh
   
   return(list(LDSC.res=LDSC.res, gc=gc, Omega = Omega, C=C))
 }
-

@@ -1,57 +1,58 @@
-#' #' @title  A function for implementing MR-APSS.
-#' #' @description MR-APSS: a unified approach to Mendelian Randomization accounting for pleiotropy and sample structure using genome-wide summary statistics.
-#' #' MA-APSS uses a variantional EM algorithm for estimation of parameters.
-#' #' MR-APSS uses likelihood ratio test for inference.
-#' #' 
-#' #' @param MRdat  MRdat frame at least contain the following varaibles: b.exp b.out se.exp se.out L2 Threshold. L2:LD score, Threshold: modified IV selection threshold for correction of selection bias
-#' #' @param exposure exposure name
-#' #' @param outcome   outcome name
-#' #' @param pi0 initial value for pi0, default `NULL` will use the default initialize procedure.
-#' #' @param sigma.sq initial value for sigma.sq , default `NULL`will use the default initialize procedure.
-#' #' @param tau.sq initial value for tau.sq , default `NULL` will use the default initialize procedure.
-#' #' @param C  the estimated C matrix capturing the effects of sample structure. default `diag(2)`.
-#' #' @param Omega  the estimated variance-covariance matrix of polygenic effects. default `matrix(0,2,2)`.
-#' #' @param tol     tolerence, default '1e-08'
-#' #' @param Cor.SelectionBias   Whether use the selection Threshold for correction of selection bias. If FALSE, the model won't correct for selection bias.
-#' #' @param ELBO     Whether check the evidence lower bound or not, if `FALSE`, check the maximum likelihood instead. default `FALSE`.
-#' #' 
-#' #' @return a list with the following elements:
-#' #' \describe{
-#' #' \item{MRdat: }{Input MRdat frame}
-#' #' \item{exposure: }{exposure of interest}
-#' #' \item{outcome: }{outcome of interest}
-#' #' \item{beta: }{causal effect estimate}
-#' #' \item{beta.se: }{standard error}
-#' #' \item{pval: }{p-value}
-#' #' \item{sigma.sq: }{variance of forground exposure effect}
-#' #' \item{tau.sq: }{variance of forground outcome effect}
-#' #' \item{pi0: }{The probability of a SNP with forground signal after selection}
-#' #' \item{post: }{Posterior estimates of latent varaibles}
-#' #' \item{method: }{"MR-APSS"}
-#' #' }
-#' #' 
-#' #' @examples
-#' #' library(MRAPSS)
-#' #' exposure = "BMI"
-#' #' outcome = "T2D"
-#' #' Threshold = 5e-05  # IV selection Threshold
-#' #' MRdat(C)
-#' #' MRdat(Omega)
-#' #' MRdat(MRdat)
-#' #' MRres = MRAPSS(MRdat,
-#' #'                exposure = "BMI",
-#' #'                outcome = "T2D",
-#' #'                C = C,
-#' #'                Omega =  Omega ,
-#' #'                Cor.SelectionBias = TRUE)
-#' #' MRplot(MRres, exposure = "BMI", outcome = "T2D")
-#' #' @export
-#' #' 
-#' 
-
+#' Fit the MR-MU model
+#'
+#' Fits the MR-MU variational EM model using summary statistics for one primary
+#' exposure, one outcome, and zero or more confounder traits. When no confounder
+#' remains after optional filtering, the function falls back to the single-
+#' exposure MRAPSS model.
+#'
+#' @param MRdat A list returned by [MRMU_Input()] or an equivalent object with
+#'   matrices `b.exp`, `se.exp`, and `pval.exps`, vectors or one-column matrices
+#'   `b.out`, `se.out`, `L2`, and an instrument selection `Threshold`.
+#' @param exposure Character string naming the primary exposure trait.
+#' @param confounders Character vector naming confounder traits. Use `NULL` for
+#'   a single-exposure model.
+#' @param outcome Character string naming the outcome trait.
+#' @param pi0 Optional initial value for the proportion of selected instruments
+#'   with foreground signal. If `NULL`, the algorithm initializes it internally.
+#' @param SigmaX Optional initial covariance matrix for exposure and confounder
+#'   foreground effects. If `NULL`, it is initialized from `MRdat$b.exp`.
+#' @param tau.sq Optional initial foreground outcome-effect variance. If `NULL`,
+#'   it is initialized from `MRdat$b.out`.
+#' @param C Sample-structure matrix estimated from LDSC. Rows and columns should
+#'   be named by `c(exposure, confounders, outcome)`.
+#' @param Omega Polygenic-effect covariance matrix estimated from LDSC. Rows and
+#'   columns should be named by `c(exposure, confounders, outcome)`.
+#' @param Cor.SelectionBias Logical. If `TRUE`, corrects for IV selection using
+#'   `MRdat$Threshold`. If `FALSE`, uses `Threshold = 1`.
+#' @param tol Numeric convergence tolerance for the variational EM algorithm.
+#' @param a,b Hyperparameters for the shrinkage prior on confounder effects.
+#' @param cut.confounders Logical. If `TRUE`, removes confounder columns with
+#'   very weak genome-wide evidence before fitting the model.
+#'
+#' @return A list containing the causal estimate `beta1`, standard error
+#'   `beta1.se`, p-value `beta1.pvalue`, fitted variance parameters, posterior
+#'   quantities, instrument counts, convergence settings, and model metadata.
+#'
+#' @examples
+#' \dontrun{
+#' library(MRMU)
+#' data("urate_cad_mrmu_iv")
+#' data("urate_cad_mrmu_background")
+#'
+#' fit <- MRMU(
+#'   MRdat = urate_cad_mrmu_iv,
+#'   exposure = "Biomarker_Urate",
+#'   confounders = c("Metabolic_SBP", "Metabolic_DBP"),
+#'   outcome = "CAD_UKB",
+#'   C = urate_cad_mrmu_background$C,
+#'   Omega = urate_cad_mrmu_background$Omega
+#' )
+#' fit$beta1
+#' }
+#' @export
 MRMU <- function(MRdat = NULL,
                  exposure = NULL,
-                 confounders=NULL,
+                 confounders = NULL,
                  outcome = NULL,
                  pi0 = NULL,
                  SigmaX = NULL,
@@ -60,7 +61,7 @@ MRMU <- function(MRdat = NULL,
                  Omega = NULL,
                  Cor.SelectionBias = TRUE,
                  tol = 1e-8,
-                 a =1, b=1,
+                 a = 1, b = 1,
                  cut.confounders = TRUE){
   
   if(is.null(MRdat)){
@@ -68,6 +69,7 @@ MRMU <- function(MRdat = NULL,
     return(NULL)
   }
   
+  # Selection threshold controls the truncation correction for selected IVs.
   if(!Cor.SelectionBias){
     
     Threshold = 1
@@ -87,6 +89,7 @@ MRMU <- function(MRdat = NULL,
   p0 = ncol(MRdat$b.exp)
   cols = 1:p0
   
+  # Provide neutral defaults when LDSC background matrices are not supplied.
   if(is.null(C)){
     C = diag((p0+1))}
   
@@ -103,6 +106,7 @@ MRMU <- function(MRdat = NULL,
   
   if(is.null(outcome)) outcome ="Y"
   
+  # Align matrix names before subsetting, allowing either row or column names.
   if(!is.null(rownames(Omega))) colnames(Omega) = row.names(Omega) 
 
   if(!is.null(colnames(Omega))) rownames(Omega) =  colnames(Omega) 
@@ -120,6 +124,7 @@ MRMU <- function(MRdat = NULL,
   
   
   if(cut.confounders & ! is.null(confounders)){
+    # Keep the exposure and confounders with enough strong instruments.
     counts = colSums(MRdat$pval.exps < 5e-08)
     cols = sort(unique(c(1, which(counts > 5))))
   }
@@ -141,7 +146,7 @@ MRMU <- function(MRdat = NULL,
   
   
   if(p2==0){
-    # run MR-APSS
+    # With no remaining confounder, fit the single-exposure MRAPSS model.
     MRdat = data.frame(b.exp = MRdat$b.exp[,1],
                        b.out = MRdat$b.out,
                        se.exp = MRdat$se.exp[,1],
@@ -174,7 +179,7 @@ MRMU <- function(MRdat = NULL,
     
     
   }else{
-    ## stage 1
+    # Stage 1 fits the null model with the primary causal effect fixed to zero.
     fit_s1 = MRMU_vEMfunc(MRdat = MRdat,
                           beta1 = 0,
                           SigmaX = SigmaX,
@@ -208,6 +213,8 @@ MRMU <- function(MRdat = NULL,
                             a=a, b=b)
     }
     
+    # Stage 2 releases the primary causal effect and reuses stage 1 posterior
+    # values as stable starting points.
     fit_s2 = MRMU_vEMfunc(MRdat = MRdat,
                           beta1 = 0,
                           mu.beta2 = fit_s1$post$mu.beta2,
@@ -226,7 +233,7 @@ MRMU <- function(MRdat = NULL,
     
     #cat("stage1: likelihood ", fit_s1$log_elbo, "stage2: likelihood ", fit_s2$log_elbo, "\n")
     
-    # Inference
+    # Likelihood-ratio inference compares stage 2 with the stage 1 null fit.
     LR1 = 2*(fit_s2$log_elbo - fit_s1$log_elbo)
     pvalue1 = pchisq(LR1, 1, lower.tail = F)
     pvalue1 = formatC(pvalue1, format = "e", digits = 4)
