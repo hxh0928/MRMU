@@ -1,0 +1,284 @@
+# The function for calculating evidence lower bound
+cal_log_elbo <- function(p, Abeta, H, mu.beta2, Sigma.beta2, pi0, m, Pi, S, inv.S, Var, inv.Var, muj, Sigmaj, hat.b, C_1, C_2, a, b, ap, bp){
+  
+  return(
+    # Elog(p(\hat gamma_j, \hat Gamma_j | \gamma_j, \alpha_j, Z_j, beta2))
+    -log(2*pi) * m * (p+1)/2 - 1/2*sum(log(unlist(lapply(S, det)))) +
+      
+      -1/2 *sum(mapply(function(M1, vec1){t(vec1) %*% M1 %*% vec1}, vec1=hat.b, M1=inv.S)) +
+      
+      sum(Pi *mapply(function(M1, vec1, vec2){t(vec1) %*% t(Abeta) %*% M1 %*% vec2}, M1=inv.S, vec1=muj, vec2=hat.b)) +
+      
+      -1/2 * sum(Pi*mapply(function(M1, vec1, M2){sum(diag(t(Abeta) %*% M1 %*% Abeta %*% (vec1 %*% t(vec1) + M2)))},
+                           vec1=muj, M1=inv.S, M2=Sigmaj)) +
+      
+      -1/2 * sum(diag(H %*% Sigma.beta2)) +
+      
+      # E(log p(gamma_j, alpha_j))
+      -log(2*pi) * m * (p+1)/2 - 1/2*sum(log(unlist(lapply(Var, det)))) -
+      
+      1/2 * sum(Pi * mapply(function(M1, vec1, M2){sum(diag(M1 %*% (vec1 %*% t(vec1) + M2)))},
+                            vec1=muj, M1=inv.Var, M2=Sigmaj)) -
+      
+      (p+1)/2*sum(1-Pi) +
+      #E(log p(\beta_2))
+      #-(p-1)/2*log(sigma0.sq) - 1/2*(sum(mu.beta2^2+sigma.beta2.sq))/sigma0.sq +
+      -log(2*pi)* (p-1)/2 + ((p-1)/2 + a -1)*(digamma(ap)-log(bp)) +
+      (- 1/2*ap/bp) * (sum(diag(mu.beta2%*%t(mu.beta2)+Sigma.beta2))) -
+      b*ap/bp +
+      # E(log p((Z_j))
+      sum(Pi * log(pi0 + (pi0==0)) + (1-Pi)*log(1-pi0 + (pi0==1))) -
+      
+      sum(Pi *log(2*pnorm(C_1)) + (1-Pi)*log(2*pnorm(C_2))) +
+      
+      # -E(log(q(gamma_j,alpha_j|Z_j)))
+      sum(Pi * ((p+1)/2 * (1 +  log(2*pi)) + 1/2 *log(unlist(lapply(Sigmaj, det))))) +
+      
+      sum((1-Pi) * ((p+1)/2 * (1 +  log(2*pi)) + 1/2 *log(unlist(lapply(Var, det))))) +
+      
+      # -E(log(q(Z_j)))
+      sum(-Pi * log(Pi + (Pi==0)) - (1-Pi) * log(1-Pi + (Pi==1))) +
+      
+      log(gamma(ap)) - (ap-1)*digamma(ap) - log(bp) + ap +
+      
+      1/2 * sum(log(det(Sigma.beta2)))                                                                                                                           
+  )
+}
+
+MRMU_vEMfunc <- function(MRdat = NULL,
+                        beta1 = NULL,
+                        mu.beta2 =NULL,
+                        Sigma.beta2 = NULL,
+                        SigmaX = NULL,
+                        tau.sq = NULL,
+                        pi0 = NULL,
+                        fix.beta1 = F,
+                        fix.tau = F,
+                        fix.SigmaX = F,
+                        C = NULL,
+                        Omega = NULL,
+                        tol=1e-08,
+                        Threshold=1,
+                        a=1, b=1){
+  
+  #source("/import/home/share/xhu/MRMU/checkAlgorithm/demo_data.R", echo=TRUE)
+
+  if(is.null(MRdat)){
+    message("No MRdat for MR testing")
+    return(NULL)
+  }
+  
+  m = nrow(MRdat$b.exp)
+  p = ncol(MRdat$b.exp)
+  Cr <- abs(qnorm(Threshold/2))
+  Omega.Y = Omega[(p+1), (p+1)]
+  se.exp = matrix(MRdat$se.exp, nrow = m)      # m * p matrix
+  se.out = matrix(MRdat$se.out, nrow = m)
+  se = matrix(cbind(se.exp,se.out), nrow=m)
+  se.diags = lapply(split(se, row(se)), function(x){diag(x)})
+  
+  # initialize
+  if(is.null(SigmaX)) SigmaX = var(MRdat$b.exp)
+  if(is.null(tau.sq)) tau.sq = var(MRdat$b.out)
+  if(is.null(pi0)) pi0 = 0.5
+  if(is.null(beta1)) beta1 = c(coef(lm(MRdat$b.out ~ 0+ MRdat$b.exp[,1], weights = se.out)))
+  if(is.null(mu.beta2)) mu.beta2 = c(coef(lm(MRdat$b.out ~ 0+ MRdat$b.exp[,-1], weights = se.out)))
+  
+  LDsc = MRdat$L2
+  if(is.null(LDsc)) LDsc = rep(1, m)
+  LDsc = ifelse(LDsc<1, 1, LDsc)
+  
+  s11 = se.exp[,1]^2
+  S11 = se.exp[,1]^2*C[1,1] + LDsc*Omega[1,1]
+  
+  hat.b = t(matrix(cbind(MRdat$b.exp, MRdat$b.out), nrow=m))
+  # genome-wide shared
+  Omega = matrix(LDsc, nrow=m, ncol=1) %*% matrix(as.vector(Omega), nrow = 1)
+  Omega = lapply(split(Omega, row(Omega)), function(x){matrix(x, nrow=(p+1), ncol=(p+1))})
+  S =  mapply(function(M1, M2){M1 + M2 %*% C %*% M2}, M1 = Omega, M2 = se.diags)
+  
+  hat.b = lapply(split(hat.b, col(hat.b)), function(x){c(x)})
+  
+  S = lapply(split(S, col(S)), function(x){matrix(x, nrow=(p+1), ncol=(p+1))})
+  inv.S <- lapply(S, solve)
+  
+  log_elbos = NULL
+  if(is.null(Sigma.beta2)) Sigma.beta2 = diag(p-1)
+  
+  for(i in 1:5000){
+    ap = a + (p-1)/2
+    bp = b + 1/2 * (sum(diag(mu.beta2%*%t(mu.beta2)+Sigma.beta2)))
+    beta = c(beta1, mu.beta2)
+    Abeta = diag((p+1))
+    Abeta[(p+1), (1:p)] = beta
+    Abeta0 = matrix(0, (p+1), (p+1))
+    Abeta0[(p+1), (1:p)] = beta
+    
+    sigma.sq = drop(SigmaX[1,1])
+    C_1 = - Cr*sqrt(s11)/sqrt(S11 + LDsc*sigma.sq)
+    C_2 = - Cr*sqrt(s11)/sqrt(S11)
+    
+    Var =  matrix(LDsc, nrow=m, ncol=1) %*% matrix(as.vector(Matrix::bdiag(SigmaX, tau.sq)), nrow = 1)
+    inv.Var =  matrix(1/LDsc, nrow=m, ncol=1) %*% matrix(as.vector(solve(Matrix::bdiag(SigmaX, tau.sq))), nrow = 1)
+    Var = lapply(split(Var, row(Var)), function(x){matrix(x, nrow=(p+1), ncol=(p+1))})
+    inv.Var = lapply(split(inv.Var, row(inv.Var)), function(x){matrix(x, nrow=(p+1), ncol=(p+1))})
+    
+    # faster way to compute Sigmaj
+    eta =  lapply(inv.S, function(x){x[(p+1), (p+1)]})
+    
+    E = c(beta, 0)  %*% t(c(beta, 0))
+    E[2:p, 2:p] = E[2:p, 2:p] + Sigma.beta2
+    
+    inv.Sigmaj = mapply(function(M1, M2, x){ M1 + M2 +  M2 %*% Abeta0 +  t(Abeta0) %*% M2 + x * E},
+                        M1=inv.Var,                        
+                        M2=inv.S,
+                        x = eta)
+    
+    inv.Sigmaj <- lapply(split(inv.Sigmaj , col(inv.Sigmaj)), 
+                         function(x){matrix(x, nrow=(p+1), ncol=(p+1))})
+    
+    #print(inv.Sigmaj[[1]][1:5, 1:5])
+    
+    #Sigmaj <- lapply(inv.Sigmaj, solve)
+    cholSigmaj <- lapply(inv.Sigmaj, chol)
+    Sigmaj <- lapply(cholSigmaj, chol2inv)
+    
+    muj <- mapply(function(M1, M2, vec1){M2 %*% t(Abeta) %*% M1 %*% vec1},
+                  vec1=hat.b,
+                  M1=inv.S,
+                  M2=Sigmaj)
+    
+    muj = lapply(split(muj, col(muj)), function(x){matrix(x, nrow=(p+1), ncol=1)})
+    
+    if(pi0 == 1) Pi = rep(1, m)
+    
+    if(pi0 !=1){
+      
+      bj = 1/2 *mapply(function(M1, vec1){ t(vec1) %*% M1 %*% vec1}, vec1 = muj, M1=inv.Sigmaj) +
+        log(pi0/(1-pi0)) + 1/2* mapply(function(M1, M2){ -log(det(M1)) - log(det(M2))}, M1 = inv.Sigmaj, M2 = Var) -
+        log(pnorm(C_1)/pnorm(C_2))
+      
+      Pi = 1/(1+exp(-bj))
+      
+      Pi = ifelse(Pi<1e-04, 1e-04, Pi)
+      
+      Pi = ifelse(Pi>0.9999, 0.9999, Pi)
+    }
+    
+    
+    # faster way to comput g
+    A1 = matrix(0, (p+1), (p+1))
+    A1[(p+1), 1] = 1
+    
+    temp1 = mapply(function(M1,vec1,vec2) return(vec1 %*% t(vec2) %*% M1),
+                   M1 =inv.S, vec1 =muj, vec2= hat.b)
+    
+    temp2 =  mapply(function(M1,vec1,M2) return((vec1 %*% t(vec1) + M2) %*% t(beta1 * A1 + diag((p+1))) %*% M1),
+                    M1 =inv.S, vec1 =muj, M2 = Sigmaj)
+    
+    g = temp1[(p*(p+1)+2):((p+1)^2-1), ] %*% Pi - temp2[(p*(p+1)+2):((p+1)^2-1), ] %*% Pi
+    
+    
+    # second faster way to compute H
+    Hj = mapply(function(M1,vec1, x) 
+      return(x*((vec1 %*% t(vec1) + M1)[(2:p), (2:p)])),
+      vec1 =muj, M1 = Sigmaj, x = eta)
+    
+    H = matrix(Hj %*% Pi, (p-1),(p-1))
+    
+    Sigma.beta2 =  solve(H + ap/bp* diag(p-1))
+    mu.beta2  = Sigma.beta2 %*% g
+    
+    
+    log_elbo <- cal_log_elbo(p, Abeta, H, mu.beta2, Sigma.beta2, pi0, m,
+                             Pi, S, inv.S, Var, inv.Var, muj, Sigmaj,
+                             hat.b, C_1, C_2, a, b, ap, bp)
+    log_elbos <-  c(log_elbos, log_elbo)
+    
+    if(i>1 && (log_elbos[i] - log_elbos[(i-1)])/log_elbos[(i-1)] < tol && log_elbos[i] > log_elbos[(i-1)])  break
+    
+    cat("Likelihood: ", log_elbo, "\t","beta1: ", beta1, "\ttau.sq: ",tau.sq, " pi0", pi0, "\n")
+    
+    # M-step
+    if(!fix.beta1){
+      A1 = matrix(0, (p+1), (p+1))
+      A1[(p+1), 1] = 1
+      Abeta1 = Abeta
+      Abeta1[(p+1), 1] = 0
+      temp1 = sum(Pi * mapply(function(M1,vec1,vec2) return(t(vec1) %*% t(A1) %*% M1 %*% vec2),
+                              M1 =inv.S, vec1 =muj, vec2= hat.b))
+      
+      temp2 =  sum(Pi * mapply(function(M1,vec1,M2) return(sum(diag(t(A1) %*% M1 %*% Abeta1 %*% (vec1 %*% t(vec1) + M2)))),
+                               M1 =inv.S, vec1 =muj, M2 = Sigmaj))
+      
+      right.scalar = temp1 - temp2
+      
+      left.scalar = sum(Pi * mapply(function(M1,vec1,M2) return(sum(diag(t(A1) %*% M1 %*% A1 %*% (vec1 %*% t(vec1) + M2)))),
+                                    vec1 =muj,  M1 =inv.S, M2 = Sigmaj))
+      
+      beta1 = right.scalar/left.scalar
+      
+    }
+    
+    
+    # update pi0 when pi0!=1
+    if(pi0!=1){
+      pi0 = sum(Pi)/m
+      # set lower bound and upper bound of $\pi_0$ to avoid log(0)
+      if(pi0<1e-04)   pi0 = 1e-04
+      if(pi0>0.9999)  pi0 = 0.9999
+      
+    }
+    
+    # update SigmaX
+    muj.X <- lapply(muj, function(x) {x[1:p]})
+    Sigmaj.X <- lapply(Sigmaj, function(x) {x[(1:p),(1:p)]})
+    
+    if(!fix.SigmaX){
+      
+      temp0 = mapply(function(vec1, M1) vec1 %*% t(vec1) + M1,
+                     vec1 = muj.X, M1 = Sigmaj.X)
+      
+      tempL = matrix(temp0 %*% (Pi/LDsc), byrow=F, nrow = p, ncol =p) + SigmaX * (m-sum(Pi))
+      
+      if(Threshold==1) {
+        
+        SigmaX = tempL/m
+      }
+      
+      if(Threshold!=1) {
+        
+        E = matrix(0, p, p)
+        E[1,1] = 1
+        
+        tempR = m*solve(SigmaX) +  sum(Pi * dnorm(C_1)/pnorm(C_1) * Cr * LDsc *
+                                                 sqrt(s11) * (S11 + LDsc*sigma.sq)^(-3/2)) * E
+        L = t(chol(tempR))
+        inv.L = solve(L)
+        
+        SigmaX = t(inv.L) %*% expm::sqrtm(t(L) %*% tempL %*% L) %*% inv.L
+      }
+    }
+    
+    muj.Y <- lapply(muj, function(x) {x[(1+p)]})
+    Sigmaj.Y <- lapply(Sigmaj, function(x) {x[(1+p),(1+p)]})
+    
+    if(!fix.tau)  tau.sq = sum(Pi/LDsc * (unlist(muj.Y)^2 + unlist(Sigmaj.Y)))/m + (m-sum(Pi))*tau.sq/m
+
+  }
+  
+  return(list(beta1 = beta1,
+              SigmaX = SigmaX,
+              tau.sq = tau.sq,
+              pi0 = pi0,
+              post = list(mu.gammaj = muj, Pi = Pi, mu.beta2 = mu.beta2, Sigma.beta2=Sigma.beta2),
+              log_elbos = log_elbos,
+              log_elbo = log_elbo,
+              Threshold = Threshold,
+              tol=tol)
+  )
+  
+}
+
+
+
