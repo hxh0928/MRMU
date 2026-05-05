@@ -57,7 +57,7 @@ or PLINK reference files.
 
 If you want to rebuild the example from raw summary statistics, first harmonise
 the four traits with `MV_harmonise()`, estimate `C` and `Omega`, and then pass
-`bfile` and `plink_bin` to `MRMU_Input()`, `SVMR_Input()`, or `MVMR_IV()` for
+`bfile` and `plink_bin` to `MRMU_Input()` for
 PLINK-based clumping.
 
 ## Tutorial and example reports
