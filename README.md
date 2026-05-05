@@ -20,17 +20,17 @@ library(MRMU)
 
 # Load packaged example data:
 # - urate_cad_mrmu_iv: clumped IV data
-# - urate_cad_mrmu_background: LDSC-estimated C, Omega, and Rg matrices
+# - urate_cad_ldsc_parameters: LDSC-estimated C, Omega, and Rg matrices
 data("urate_cad_mrmu_iv")
-data("urate_cad_mrmu_background")
+data("urate_cad_ldsc_parameters")
 
 fit <- MRMU(
   MRdat = urate_cad_mrmu_iv,
   exposure = "Biomarker_Urate",
   confounders = c("Metabolic_SBP", "Metabolic_DBP"),
   outcome = "CAD_UKB",
-  C = urate_cad_mrmu_background$C,
-  Omega = urate_cad_mrmu_background$Omega
+  C = urate_cad_ldsc_parameters$C,
+  Omega = urate_cad_ldsc_parameters$Omega
 )
 
 data.frame(
@@ -51,8 +51,8 @@ Expected result:
 |---|---|---:|---:|---:|---:|---:|---:|
 | Biomarker_Urate | CAD_UKB | 0.01232753 | 0.01526020 | 4.1919e-01 | 696 | 322.2309 | 0.4629754 |
 
-The packaged demo data include the final clumped IV input and LDSC background
-parameters, so this example can run without downloading the full GWAS, LD score,
+The packaged demo data include the final clumped IV input and LDSC parameters,
+so this example can run without downloading the full GWAS, LD score,
 or PLINK reference files.
 
 If you want to rebuild the example from raw summary statistics, first harmonise

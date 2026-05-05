@@ -60,7 +60,7 @@ cal_log_elbo <- function(p, Abeta, H, mu.beta2, Sigma.beta2, pi0, m, Pi, S, inv.
 # - mu.beta2/Sigma.beta2: posterior mean/covariance for confounder effects.
 # - SigmaX/tau.sq/pi0: foreground variance and mixture parameters.
 # - fix.beta1/fix.tau/fix.SigmaX: logical flags controlling M-step updates.
-# - C/Omega: LDSC background matrices aligned to model trait order.
+# - C/Omega: LDSC parameter matrices aligned to model trait order.
 MRMU_vEMfunc <- function(MRdat = NULL,
                         beta1 = NULL,
                         mu.beta2 =NULL,

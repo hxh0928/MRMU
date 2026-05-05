@@ -17,13 +17,13 @@ This tutorial walks through a complete real-data example:
 - Confounders: `Metabolic_SBP`, `Metabolic_DBP`
 - Instrument threshold: `p <= 5e-5`
 - LD clumping: local PLINK with the 1000 Genomes EUR reference panel
-- Background parameters: estimated from EUR LD scores
+- LDSC parameters: estimated from EUR LD scores
 
 The full workflow has four practical steps:
 
 1. Install and load packages.
 2. Prepare and harmonise summary statistics.
-3. Estimate background nuisance parameters and select clumped instruments.
+3. Estimate LDSC nuisance parameters and select clumped instruments.
 4. Fit the MRMU model and read the output.
 
 # Step 0: Installation and Loading Packages
@@ -115,7 +115,7 @@ data.files <- data.frame(
 
 ## 1.2. Read LD Scores
 
-MRMU uses SNP-level LD scores in the background model. Read and combine all 22
+MRMU uses SNP-level LD scores in the LDSC parameter model. Read and combine all 22
 chromosomes:
 
 ```r
@@ -165,13 +165,13 @@ b  = Z / sqrt(N)
 se = 1 / sqrt(N)
 ```
 
-# Step 2: Estimate Background Parameters
+# Step 2: Estimate LDSC Parameters
 
 MRMU needs two nuisance matrices for the exposure, confounders, and outcome:
 
 | matrix | dimension | interpretation |
 |---|---:|---|
-| `Omega` | 4 by 4 | covariance matrix of background polygenic effects |
+| `Omega` | 4 by 4 | covariance matrix of polygenic effects |
 | `C` | 4 by 4 | covariance/intercept matrix capturing sample structure and correlated errors |
 
 Here the trait order is:
@@ -352,7 +352,7 @@ The LDSC-based MRMU result for this example was:
 | threshold | 5e-5 |
 | method | MR-MU with LDSC `Omega/C` and local PLINK clumping |
 
-After accounting for SBP and DBP and using LDSC-estimated background
+After accounting for SBP and DBP and using LDSC-estimated
 parameters, the estimated effect of urate on CAD_UKB was small and not
 statistically significant.
 
@@ -369,7 +369,7 @@ This comparison is useful because it answers a concrete question:
 What would the urate-CAD_UKB result look like if we ignored SBP and DBP?
 ```
 
-## 5.1. Reuse the Background Parameters From Step 2
+## 5.1. Reuse the LDSC Parameters From Step 2
 
 There is no need to repeat LDSC estimation for the no-confounder comparison.
 Step 2 already estimated `Omega` and `C` for all four traits. The

@@ -1,4 +1,4 @@
-#' Estimate MR-MU LDSC background parameters
+#' Estimate MR-MU LDSC parameters
 #'
 #' Estimates pairwise LDSC-based nuisance parameters for all traits listed in
 #' `data.files`. The resulting `Omega` and `C` matrices can be passed directly

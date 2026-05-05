@@ -1,6 +1,6 @@
 \name{est_MRMU_ldsc_paras}
 \alias{est_MRMU_ldsc_paras}
-\title{Estimate MR-MU LDSC background parameters}
+\title{Estimate MR-MU LDSC parameters}
 \usage{
 est_MRMU_ldsc_paras(
   data.files,

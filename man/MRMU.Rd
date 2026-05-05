@@ -94,15 +94,15 @@ exposure MRAPSS model.
 \dontrun{
 library(MRMU)
 data("urate_cad_mrmu_iv")
-data("urate_cad_mrmu_background")
+data("urate_cad_ldsc_parameters")
 
 fit <- MRMU(
   MRdat = urate_cad_mrmu_iv,
   exposure = "Biomarker_Urate",
   confounders = c("Metabolic_SBP", "Metabolic_DBP"),
   outcome = "CAD_UKB",
-  C = urate_cad_mrmu_background$C,
-  Omega = urate_cad_mrmu_background$Omega
+  C = urate_cad_ldsc_parameters$C,
+  Omega = urate_cad_ldsc_parameters$Omega
 )
 fit$beta1
 }

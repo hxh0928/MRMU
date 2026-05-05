@@ -1,6 +1,6 @@
 test_that("packaged urate-CAD example data are available", {
   data("urate_cad_mrmu_iv", package = "MRMU")
-  data("urate_cad_mrmu_background", package = "MRMU")
+  data("urate_cad_ldsc_parameters", package = "MRMU")
 
   expect_equal(urate_cad_mrmu_iv$exposure, "Biomarker_Urate")
   expect_equal(urate_cad_mrmu_iv$confounders, c("Metabolic_SBP", "Metabolic_DBP"))
@@ -10,6 +10,6 @@ test_that("packaged urate-CAD example data are available", {
   expect_equal(unique(urate_cad_mrmu_iv$Threshold), 5e-5)
 
   expected_traits <- c("Biomarker_Urate", "Metabolic_SBP", "Metabolic_DBP", "CAD_UKB")
-  expect_equal(rownames(urate_cad_mrmu_background$C), expected_traits)
-  expect_equal(colnames(urate_cad_mrmu_background$Omega), expected_traits)
+  expect_equal(rownames(urate_cad_ldsc_parameters$C), expected_traits)
+  expect_equal(colnames(urate_cad_ldsc_parameters$Omega), expected_traits)
 })

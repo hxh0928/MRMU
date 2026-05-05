@@ -37,15 +37,15 @@
 #' \dontrun{
 #' library(MRMU)
 #' data("urate_cad_mrmu_iv")
-#' data("urate_cad_mrmu_background")
+#' data("urate_cad_ldsc_parameters")
 #'
 #' fit <- MRMU(
 #'   MRdat = urate_cad_mrmu_iv,
 #'   exposure = "Biomarker_Urate",
 #'   confounders = c("Metabolic_SBP", "Metabolic_DBP"),
 #'   outcome = "CAD_UKB",
-#'   C = urate_cad_mrmu_background$C,
-#'   Omega = urate_cad_mrmu_background$Omega
+#'   C = urate_cad_ldsc_parameters$C,
+#'   Omega = urate_cad_ldsc_parameters$Omega
 #' )
 #' fit$beta1
 #' }
@@ -89,7 +89,7 @@ MRMU <- function(MRdat = NULL,
   p0 = ncol(MRdat$b.exp)
   cols = 1:p0
   
-  # Provide neutral defaults when LDSC background matrices are not supplied.
+  # Provide neutral defaults when LDSC parameter matrices are not supplied.
   if(is.null(C)){
     C = diag((p0+1))}
   
