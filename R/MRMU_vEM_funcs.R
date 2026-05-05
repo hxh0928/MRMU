@@ -3,7 +3,7 @@
 # Key dimensions:
 # - p: number of exposure/confounder traits kept in the model.
 # - m: number of selected instruments.
-# - Pi: posterior probability that each SNP belongs to the foreground class.
+# - Pi: posterior probability that each SNP belongs to the IV class.
 # - S/Var and their inverses: SNP-specific covariance matrices for observed
 #   summary statistics and latent effects.
 cal_log_elbo <- function(p, Abeta, H, mu.beta2, Sigma.beta2, pi0, m, Pi, S, inv.S, Var, inv.Var, muj, Sigmaj, hat.b, C_1, C_2, a, b, ap, bp){
