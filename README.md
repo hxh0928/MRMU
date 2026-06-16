@@ -84,3 +84,6 @@ Code, processed inputs, and selected result tables for reproducing the paper
 analyses are maintained in the companion repository:
 
 - <https://github.com/hxh0928/MRMU-reproduce>
+
+## Contact information
+Please feel free to contact Xianghong Hu (huxh@szu.edu.cn) or Prof. Can Yang (macyang@ust.hk) if any questions.
