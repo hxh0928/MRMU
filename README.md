@@ -7,11 +7,12 @@ exposures/confounders using GWAS summary statistics.
 
 ```r
 # install.packages("remotes")
+remotes::install_github("hxh0928/MR-APSS")
 remotes::install_github("hxh0928/MRMU")
 ```
 
 The package depends on `MRAPSS`, `Matrix`, `expm`, and `data.table`.
-`MRAPSS` is available from the MRC IEU r-universe repository.
+`MRAPSS` is available from <https://github.com/hxh0928/MR-APSS>.
 
 ## Demo: Urate to CAD With SBP and DBP Confounders
 
