@@ -77,6 +77,13 @@ The comparison between MRMU and MRAPSS without confounders is available in:
 The full raw GWAS, LD score, and PLINK reference data are not stored in this
 repository. The tutorial includes a placeholder table for shared download links.
 
+## Reproducing the paper analyses
+
+Code, processed inputs, and selected result tables for reproducing the paper
+analyses are maintained in the companion repository:
+
+- <https://github.com/hxh0928/MRMU-reproduce>
+
 ## Input summary-statistic format
 
 `MV_harmonise()` expects each GWAS file listed in `data.files$file.dir` to contain
