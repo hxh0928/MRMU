@@ -1,19 +1,19 @@
 # MRMU
 
-MRMU is an R package for Mendelian randomization analyses with multiple
-exposures/confounders using GWAS summary statistics.
-
+MRMU is an R package for Mendelian randomization analyses using GWAS summary statistics, designed to estimate the causal effect of an exposure on an outcome while accounting for both measured covariates and unmeasured confounders.
 ## Installation
 
 ```r
 # install.packages("remotes")
-remotes::install_github("hxh0928/MR-APSS")
 remotes::install_github("hxh0928/MRMU")
 ```
 
 The package depends on `MRAPSS`, `Matrix`, `expm`, and `data.table`.
 `MRAPSS` is available from <https://github.com/hxh0928/MR-APSS>.
-
+```r
+# install.packages("remotes")
+remotes::install_github("hxh0928/MR-APSS")
+```
 ## Demo: Urate to CAD With SBP and DBP Confounders
 
 ```r
