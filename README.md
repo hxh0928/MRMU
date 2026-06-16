@@ -83,18 +83,3 @@ Code, processed inputs, and selected result tables for reproducing the paper
 analyses are maintained in the companion repository:
 
 - <https://github.com/hxh0928/MRMU-reproduce>
-
-## Input summary-statistic format
-
-`MV_harmonise()` expects each GWAS file listed in `data.files$file.dir` to contain
-at least these columns:
-
-- `SNP`
-- `A1`
-- `A2`
-- `Z`
-- `N`
-- `P`
-
-`data.files` should also contain `trait.name`, which is used to name the output
-columns.
