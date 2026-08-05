@@ -85,5 +85,11 @@ analyses are maintained in the companion repository:
 
 - <https://github.com/hxh0928/MRMU-reproduce>
 
+## License
+
+The source code in this repository is available under the MIT License.
+The included GWAS summary data and processed datasets remain subject to
+the terms and conditions of their original data providers.
+
 ## Contact information
 Please feel free to contact Xianghong Hu (huxh@szu.edu.cn) or Prof. Can Yang (macyang@ust.hk) if any questions.
